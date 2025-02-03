@@ -8,13 +8,14 @@ WORKDIR /usr/src/app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy package.json and lock file first (for caching dependencies)
-COPY package.json pnpm-lock.yaml ./
+COPY ./books/package.json ./books/pnpm-lock.yaml ./
 
 # Install dependencies using pnpm
 RUN pnpm install --frozen-lockfile
 
 # Copy the entire app into the container
-COPY . .
+COPY ./books .
+COPY ../common ./common
 
 # Expose the port NestJS runs on
 EXPOSE 3002

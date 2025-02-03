@@ -26,7 +26,8 @@ services:
   # Book Service
   book-service:
     build:
-      context: ../books
+      context: ..
+      dockerfile: books/Dockerfile
     container_name: book-service
     restart: always
     depends_on:
@@ -68,7 +69,8 @@ services:
   # Order Service
   order-service:
     build:
-      context: ../orders
+      context: ..
+      dockerfile: orders/Dockerfile
     container_name: order-service
     restart: always
     depends_on:
@@ -110,7 +112,8 @@ services:
   # Customer Service
   customer-service:
     build:
-      context: ../customers
+      context: ..
+      dockerfile: customers/Dockerfile
     container_name: customer-service
     restart: always
     depends_on:

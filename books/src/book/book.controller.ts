@@ -8,7 +8,8 @@ import {
 } from '@nestjs/microservices';
 import { Book } from './book.entity';
 import { DecreaseStockDto } from './book.dto';
-import { ACTION_IDENTIFIERS } from '../../../common/constants/general.constants';
+// @ts-ignore
+import { ACTION_IDENTIFIERS } from '../../common/constants/general.constants';
 
 @Controller('book')
 export class BookController {

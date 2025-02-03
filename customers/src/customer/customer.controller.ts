@@ -1,7 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { Payload, MessagePattern } from '@nestjs/microservices';
 import { CustomerService } from './customer.service';
-import { ACTION_IDENTIFIERS } from '../../../common/constants/general.constants';
+// @ts-ignore
+import { ACTION_IDENTIFIERS } from '../../common/constants/general.constants';
 
 @Controller('customer')
 export class CustomerController {

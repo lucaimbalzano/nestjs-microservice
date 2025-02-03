@@ -21,8 +21,8 @@ import axios from 'axios';
 import {
   SERVICES_NAME,
   SERVICES_PORTS,
-  ACTION_IDENTIFIERS,
-} from '../../../common/constants/general.constants';
+  ACTION_IDENTIFIERS, // @ts-ignore
+} from '../../common/constants/general.constants';
 
 @Controller('order')
 export class OrderController {
