@@ -38,7 +38,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [RABBITMQ_URL],
-      queue: 'book_queue',
+      queue: 'order_queue',
       queueOptions: { durable: false },
     },
   });

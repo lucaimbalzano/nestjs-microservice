@@ -12,16 +12,17 @@ import {
   HttpCode,
   HttpStatus,
   InternalServerErrorException,
+  Get,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateOrderDto } from './order.dto';
 import axios from 'axios';
-
-const GET_CUSTOMER = 'getCustomer';
-const GET_BOOK = 'getBook';
-const IS_BOOK_IN_STOCK = 'isBookInStock';
-const DECREASE_STOCK = 'DecreaseStock';
+import {
+  SERVICES_NAME,
+  SERVICES_PORTS,
+  ACTION_IDENTIFIERS,
+} from '../../../common/constants/general.constants';
 
 @Controller('order')
 export class OrderController {
@@ -37,10 +38,13 @@ export class OrderController {
 
     let customer, book;
     try {
-      customer = await this.customerClient
-        .send(GET_CUSTOMER, { customerId })
-        .toPromise();
-      book = await this.bookClient.send(GET_BOOK, { bookId }).toPromise();
+      customer = await this.customerClient.send(
+        ACTION_IDENTIFIERS.GET_CUSTOMER,
+        { customerId },
+      );
+      book = await this.bookClient.send(ACTION_IDENTIFIERS.GET_BOOK, {
+        bookId,
+      });
     } catch (error) {
       throw new ServiceUnavailableException(
         'Service unavailable, please try again later',
@@ -50,14 +54,21 @@ export class OrderController {
     if (!customer) throw new NotFoundException('Customer not found');
     if (!book) throw new NotFoundException('Book not found');
 
-    const isBookInStock = await this.bookClient
-      .send(IS_BOOK_IN_STOCK, { bookId, quantity })
-      .toPromise();
+    const isBookInStock = await this.bookClient.send(
+      ACTION_IDENTIFIERS.IS_BOOK_IN_STOCK,
+      {
+        bookId,
+        quantity,
+      },
+    );
     if (!isBookInStock)
       throw new BadRequestException('Not enough books in stock');
 
     const order = await this.orderService.createOrder(createOrderDto);
-    this.bookClient.emit(DECREASE_STOCK, { bookId, quantity });
+    this.bookClient.emit(ACTION_IDENTIFIERS.DECREASE_STOCK, {
+      bookId,
+      quantity,
+    });
 
     return order;
   }
@@ -67,14 +78,19 @@ export class OrderController {
   async deleteOrder(@Param('id') orderId: string, @Response() res: any) {
     const order = await this.orderService.getOrder(orderId);
     const { bookId, quantity } = order;
-    // Delete the order
-    await this.orderService.deleteOrder(orderId);
-    try {
+    console.log('deleteOrder:getOrder::', order);
 
+    // Delete the order
+    const result = await this.orderService.deleteOrder(orderId);
+    console.log('deleteOrder:deleteOrder::', result);
+    try {
       // Http request to book service add back the book in stock
-      await axios.patch(`http://localhost:3002/book/${bookId}`, {
-        quantity,
-      });
+      await axios.patch(
+        `http://${SERVICES_NAME.BOOK}:${SERVICES_PORTS.BOOK}/book/${bookId}`,
+        {
+          quantity,
+        },
+      );
 
       // Return success response if stock update was successful
       return res.status(HttpStatus.OK).json({
@@ -82,7 +98,7 @@ export class OrderController {
         message: 'Order deleted successfully and stock updated',
       });
     } catch (error) {
-      console.error('Error updating book stock:', error.message);
+      console.error('Error updating book stock:', error);
 
       // Rollback: Re-create the deleted order if stock update fails
       await this.orderService.createOrder(order);
@@ -91,5 +107,17 @@ export class OrderController {
         'Failed to update stock, order rollback performed',
       );
     }
+  }
+
+  @Get('/:id')
+  @HttpCode(HttpStatus.OK)
+  async getOrder(@Param('id') orderId: string) {
+    const order = await this.orderService.getOrder(orderId);
+    if (!order) {
+      throw new NotFoundException(
+        `Resource not found, order id required [${orderId}]`,
+      );
+    }
+    return order;
   }
 }
